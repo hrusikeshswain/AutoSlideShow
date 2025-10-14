@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ring Ceremony Live Slideshow 💍</title>
+<style>
+  body {
+    margin: 0;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    position: absolute;
+    transition: opacity 1s ease-in-out;
+    opacity: 0;
+  }
+  img.active { opacity: 1; }
+</style>
+</head>
+<body>
+<script>
+const FEED_URL = "https://script.google.com/macros/s/AKfycbzTkjBNkjJ5T6eWKKnu8DeQ9Hnt6NVi0TzTkFoIE6PiYN2LuSnSLOSGQrUkIkgh66Sn/exec"; // 🔹 replace with your script URL
+const SLIDE_INTERVAL = 4000;  // 4 sec per image
+const REFRESH_INTERVAL = 60000; // refresh image list every 1 min
+let images = [], current = 0, imgElems = [];
+
+async function fetchImages() {
+  try {
+    const res = await fetch(FEED_URL + "?t=" + Date.now()); // avoid cache
+    images = await res.json();
+    console.log("Loaded images:", images.length);
+    preloadImages();
+  } catch (e) { console.error(e); }
+}
+
+function preloadImages() {
+  document.body.innerHTML = ""; // clear old imgs
+  imgElems = images.map((img, i) => {
+    const el = document.createElement("img");
+    el.src = img.url;
+    if (i === 0) el.classList.add("active");
+    document.body.appendChild(el);
+    return el;
+  });
+  current = 0;
+}
+
+function showNext() {
+  if (imgElems.length === 0) return;
+  imgElems[current].classList.remove("active");
+  current = (current + 1) % imgElems.length;
+  imgElems[current].classList.add("active");
+}
+
+// Run slideshow
+setInterval(showNext, SLIDE_INTERVAL);
+// Refresh image list periodically
+setInterval(fetchImages, REFRESH_INTERVAL);
+
+// Initial load
+fetchImages();
+</script>
+</body>
+</html>
