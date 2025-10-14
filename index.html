@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ring Ceremony Live Slideshow 💍</title>
 <style>
   body {
@@ -25,26 +25,46 @@
 </style>
 </head>
 <body>
-<script>
-const FEED_URL = "https://script.google.com/macros/s/AKfycbzTkjBNkjJ5T6eWKKnu8DeQ9Hnt6NVi0TzTkFoIE6PiYN2LuSnSLOSGQrUkIkgh66Sn/exec"; // 🔹 replace with your script URL
-const SLIDE_INTERVAL = 4000;  // 4 sec per image
-const REFRESH_INTERVAL = 60000; // refresh image list every 1 min
-let images = [], current = 0, imgElems = [];
 
+<script>
+const FEED_URL = "https://script.google.com/macros/s/AKfycbzTkjBNkjJ5T6eWKKnu8DeQ9Hnt6NVi0TzTkFoIE6PiYN2LuSnSLOSGQrUkIkgh66Sn/exec"; // 🔹 Replace with your Apps Script URL
+const SLIDE_INTERVAL = 4000;
+const REFRESH_INTERVAL = 60000; // Refresh image list every 1 min
+let images = [];
+let imgElems = [];
+let current = 0;
+
+// Fetch images from Apps Script JSON feed
 async function fetchImages() {
   try {
-    const res = await fetch(FEED_URL + "?t=" + Date.now()); // avoid cache
-    images = await res.json();
-    console.log("Loaded images:", images.length);
+    const res = await fetch(FEED_URL + "?t=" + Date.now()); // prevent caching
+    const data = await res.json();
+    console.log('data', data)
+
+    // Extract ID from each URL using regex
+const ids = data.map(img => {
+    const match = img.url.match(/id=([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+}).filter(id => id !== null);
+
+    console.log('ids----', ids);
+    // Map to thumbnail URLs
+    images = ids.map(id => `https://drive.google.com/thumbnail?id=${id}&sz=w1000`);
+
+
+    console.log('images', images)
     preloadImages();
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error("Failed to fetch images:", e);
+  }
 }
 
+// Preload images into DOM
 function preloadImages() {
-  document.body.innerHTML = ""; // clear old imgs
-  imgElems = images.map((img, i) => {
+  document.querySelectorAll("img").forEach(el => el.remove());
+  imgElems = images.map((url, i) => {
     const el = document.createElement("img");
-    el.src = img.url;
+    el.src = url;
     if (i === 0) el.classList.add("active");
     document.body.appendChild(el);
     return el;
@@ -52,6 +72,7 @@ function preloadImages() {
   current = 0;
 }
 
+// Show next slide
 function showNext() {
   if (imgElems.length === 0) return;
   imgElems[current].classList.remove("active");
@@ -59,13 +80,11 @@ function showNext() {
   imgElems[current].classList.add("active");
 }
 
-// Run slideshow
-setInterval(showNext, SLIDE_INTERVAL);
-// Refresh image list periodically
-setInterval(fetchImages, REFRESH_INTERVAL);
-
-// Initial load
+// Initialize slideshow
 fetchImages();
+setInterval(showNext, SLIDE_INTERVAL);
+setInterval(fetchImages, REFRESH_INTERVAL); // auto-refresh new uploads
 </script>
+
 </body>
 </html>
